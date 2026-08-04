@@ -67,17 +67,16 @@
     </div>
 
     <script>
-        const CORRECT_PASSWORD = "なつまつり"; // ★好きな合言葉に変更可能
-
-    <script>
-        const CORRECT_PASSWORD2 = "夏祭り"; // ★好きな合言葉に変更可能
+        const CORRECT_PASSWORD1 = "なつまつり"; // 合言葉1（ひらがな）
+        const CORRECT_PASSWORD2 = "夏祭り";     // 合言葉2（漢字）
 
         function checkPassword() {
             const input = document.getElementById('password-input').value;
             const errorMsg = document.getElementById('error-msg');
 
-            if (input === CORRECT_PASSWORD)(input === CORRECT_PASSWORD2) {
-                // 合言葉が合っていたら、ゲーム画面（game.html）へ移動する
+            // 「||」は「または」という意味になります
+            if (input === CORRECT_PASSWORD1 || input === CORRECT_PASSWORD2) {
+                // 合言葉がどちらかに合っていたら、ゲーム画面（game.html）へ移動する
                 window.location.href = "game.html";
             } else {
                 errorMsg.textContent = "❌ 合言葉がちがうよ！";
