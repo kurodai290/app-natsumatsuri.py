@@ -54,27 +54,22 @@
             height: 20px;
         }
 
-        /* 👁️ 極限まで隠したテキストボックスのスタイル */
+        /* 👁️ 1ミリの隙間も、予測変換の枠すらも画面に出さない完全ステルス設定 */
         #hidden-input {
             position: fixed;
-            top: 0;
-            right: 0;
-            width: 1px;       /* 存在を気づかせない極小サイズ */
-            height: 1px;
-            padding: 0;
-            margin: 0;
-            border: none;
-            background: transparent;
-            color: transparent;    /* 入力中の文字も見えない */
-            outline: none;
-            z-index: -9999;   /* 背後に完全に隠す */
+            top: -100px;         /* 画面の外側に完全に追い出す */
+            left: -100px;        /* 画面の外側に完全に追い出す */
+            width: 0px;          /* 大きさをゼロにする */
+            height: 0px;
+            opacity: 0;          /* 完全透明 */
+            pointer-events: none;/* マウスの反応を完全に無効化 */
         }
     </style>
 </head>
 <body>
 
-    <!-- 完全透過の隠しテキストボックス -->
-    <input type="text" id="hidden-input" autocomplete="off">
+    <!-- 完全ステルス化した隠し入力欄 -->
+    <input type="text" id="hidden-input" name="secret_gate_code_random_99" autocomplete="off">
 
     <div id="password-screen">
         <h2>🏮 番台さんの部屋 🏮</h2>
@@ -108,30 +103,28 @@
             }
         });
 
-        /* 🛠️ 魔改造：どこをタイピングしても隠しボックスが拾うシステム */
+        /* 🛠️ 画面のどこにいても、タイピングを裏で感知して隠しボックスへ流す */
         window.addEventListener('keydown', function(e) {
             const activeEl = document.activeElement;
             const hiddenInput = document.getElementById('hidden-input');
             const mainInput = document.getElementById('password-input');
 
-            // 通常の入力欄にフォーカスがない状態でキーが押されたら、強制的に隠しボックスへ
+            // 中央の入力欄を触っていない時だけ、強制的に隠しボックスに入力を誘導
             if (activeEl !== mainInput) {
                 hiddenInput.focus();
             }
         });
 
-        // 🛠️ 隠しテキストボックスのEnter処理（デバッグ部屋連動）
+        // 🛠️ 隠しテキストボックスのEnter処理
         document.getElementById('hidden-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 const cmd = this.value.trim().toLowerCase();
                 
-                if (cmd === "debug" || cmd === "kurodai") {
+                // ✨ コマンドの判定を「kurodai」に変更しました！
+                if (cmd === "kurodai") {
                     window.location.href = "debug.html"; 
-                } else if (cmd !== "") {
-                    // 間違えてもアラートを出さず、静かにクリア（存在を隠すため）
-                    console.log("コマンドが違います"); 
                 }
-                this.value = ""; 
+                this.value = ""; // 入力が終わったら中身を消去
             }
         });
     </script>
