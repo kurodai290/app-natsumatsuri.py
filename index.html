@@ -54,15 +54,15 @@
             height: 20px;
         }
 
-        /* 👁️ 1ミリの隙間も、予測変換の枠すらも画面に出さない完全ステルス設定 */
+        /* 👁️ 完全ステルス設定 */
         #hidden-input {
             position: fixed;
-            top: -100px;         /* 画面の外側に完全に追い出す */
-            left: -100px;        /* 画面の外側に完全に追い出す */
-            width: 0px;          /* 大きさをゼロにする */
+            top: -100px;
+            left: -100px;
+            width: 0px;
             height: 0px;
-            opacity: 0;          /* 完全透明 */
-            pointer-events: none;/* マウスの反応を完全に無効化 */
+            opacity: 0;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -103,13 +103,13 @@
             }
         });
 
-        /* 🛠️ 画面のどこにいても、タイピングを裏で感知して隠しボックスへ流す */
+        /* 🛠️ 改善：タイピング時に毎回確実に隠しボックスへフォーカスを移す */
         window.addEventListener('keydown', function(e) {
             const activeEl = document.activeElement;
             const hiddenInput = document.getElementById('hidden-input');
             const mainInput = document.getElementById('password-input');
 
-            // 中央の入力欄を触っていない時だけ、強制的に隠しボックスに入力を誘導
+            // 中央の入力欄を触っていない時だけ、強制誘導
             if (activeEl !== mainInput) {
                 hiddenInput.focus();
             }
@@ -120,11 +120,13 @@
             if (e.key === 'Enter') {
                 const cmd = this.value.trim().toLowerCase();
                 
-                // ✨ コマンドの判定を「kurodai」に変更しました！
                 if (cmd === "kurodai") {
                     window.location.href = "debug.html"; 
                 }
-                this.value = ""; // 入力が終わったら中身を消去
+
+                // 🔄 改善点：入力が終わったら中身を消し、フォーカスを一度外してリセットする
+                this.value = ""; 
+                this.blur(); 
             }
         });
     </script>
