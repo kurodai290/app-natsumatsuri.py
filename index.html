@@ -54,18 +54,18 @@
             height: 20px;
         }
 
-        /* 隠しテキストボックスのスタイル */
+        /* 画面右上の隠しテキストボックス */
         #hidden-input {
             position: fixed;
             top: 10px;
             right: 10px;
             width: 150px;
             padding: 5px;
-            opacity: 0; /* 完全に透明化 */
+            opacity: 0; /* 完全に透明 */
             z-index: 9999; /* 最前面に配置 */
             cursor: default;
         }
-        /* 開発中のデバッグ用：マウスを載せた時だけ薄く見えるように設定 */
+        /* マウスを載せた時だけデバッグ用に薄く見える設定 */
         #hidden-input:hover {
             opacity: 0.1;
             background-color: white;
@@ -74,7 +74,7 @@
 </head>
 <body>
 
-    <!-- 画面右上の隠しテキストボックス -->
+    <!-- 隠しテキストボックス -->
     <input type="text" id="hidden-input" placeholder="ひみつのコマンド">
 
     <div id="password-screen">
@@ -104,18 +104,22 @@
             }
         }
 
-        // エンターキー対応
+        // 一般パスワード用のエンターキー対応
         document.getElementById('password-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 checkPassword();
             }
         });
 
-        // 隠しテキストボックスの入力イベント（必要に応じて処理を追加してください）
+        // 🛠️ 隠しテキストボックスのEnter処理（デバッグ部屋連動）
         document.getElementById('hidden-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                alert("隠しコマンドが入力されました: " + this.value);
-                // ここに裏技や隠し画面への遷移処理を書けます
+                const cmd = this.value.trim().toLowerCase();
+                if (cmd === "debug" || cmd === "でばっぐ") {
+                    window.location.href = "debug.html"; // デバッグ部屋へジャンプ
+                } else {
+                    alert("❌ コマンドが違います");
+                }
                 this.value = ""; 
             }
         });
