@@ -40,6 +40,15 @@
             box-sizing: border-box;
             font-size: 16px;
         }
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid #333;
+        }
         .btn-group {
             margin-top: 25px;
         }
@@ -52,14 +61,35 @@
             border-radius: 5px;
             width: 100%;
             margin-bottom: 10px;
+            box-sizing: border-box;
         }
         .btn-save { background: #00ffcc; color: #000; }
+        .btn-reset { background: #ff4757; color: #fff; }
         .btn-back { background: #555; color: #fff; }
         .info-text {
             font-size: 14px;
             color: #aaa;
             margin-top: 5px;
         }
+        /* スイッチの見た目 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #00ffcc; }
+        input:focus + .slider { box-shadow: 0 0 1px #00ffcc; }
+        input:checked + .slider:before { transform: translateX(26px); }
     </style>
 </head>
 <body>
@@ -68,14 +98,26 @@
     <p>イベントの事前設定を行います。</p>
 
     <div class="container">
-        <!-- フォーム1：参加人数のアンケート -->
+        <!-- 参加人数のアンケート -->
         <div class="form-group">
             <label for="player-count">👥 今回のイベントの参加予定人数は？</label>
             <input type="number" id="player-count" min="1" max="20" value="10" oninput="calculateRopes()">
             <p class="info-text">※人数と同じ本数の紐がゲーム画面に自動セットされます（最大20本）</p>
         </div>
 
-        <!-- フォーム2：当選番号の仕込み（おまけ機能） -->
+        <!-- 👑 新機能：状態維持のON/OFFスイッチ -->
+        <div class="form-group">
+            <label>🔄 受付に戻ってもさっきの状態（引かれた紐）を維持する</label>
+            <div class="toggle-container">
+                <span id="toggle-status" style="font-weight: bold; color: #ccc;">OFF (毎回一からリセット)</span>
+                <label class="switch">
+                    <input type="checkbox" id="keep-state-toggle" onchange="updateToggleText()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 当選番号の仕込み -->
         <div class="form-group">
             <label for="cheat-number">🎯 次の人が引く当選番号を強制指定 (任意)：</label>
             <select id="cheat-number">
@@ -85,36 +127,50 @@
 
         <div class="btn-group">
             <button class="btn btn-save" onclick="saveSettings()">設定を適用して保存する</button>
+            <!-- 👑 新機能：進行状況のみをクリアするリセットボタン -->
+            <button class="btn btn-reset" onclick="resetGameProgress()">💥 引かれた紐のデータを今すぐリセット</button>
             <button class="btn btn-back" onclick="location.href='index.html'">受付へ戻る</button>
         </div>
     </div>
 
     <script>
-        // ページ読み込み時に現在の設定を復元する
         window.onload = function() {
             const savedCount = localStorage.getItem('totalRopes') || 10;
             document.getElementById('player-count').value = savedCount;
             
-            // 人数に合わせて当選番号の選択肢を自動生成
             calculateRopes();
 
             const savedCheat = localStorage.getItem('cheatTarget') || 'random';
             document.getElementById('cheat-number').value = savedCheat;
+
+            // 状態維持ON/OFFの復元
+            const savedKeep = localStorage.getItem('keepState') === 'true';
+            document.getElementById('keep-state-toggle').checked = savedKeep;
+            updateToggleText();
         };
 
-        // 人数の入力に合わせて、仕込み番号のドロップダウンの選択肢を増減させる関数
+        function updateToggleText() {
+            const isChecked = document.getElementById('keep-state-toggle').checked;
+            const statusText = document.getElementById('toggle-status');
+            if (isChecked) {
+                statusText.textContent = "ON (引いた紐を残す)";
+                statusText.style.color = "#00ffcc";
+            } else {
+                statusText.textContent = "OFF (毎回一からリセット)";
+                statusText.style.color = "#ccc";
+            }
+        }
+
         function calculateRopes() {
             const countInput = document.getElementById('player-count');
             let count = parseInt(countInput.value) || 10;
 
-            // 画面が崩れないように最大20本に制限
             if (count > 20) { count = 20; countInput.value = 20; }
             if (count < 1) { count = 1; countInput.value = 1; }
 
             const cheatSelect = document.getElementById('cheat-number');
             const currentVal = cheatSelect.value;
 
-            // 選択肢のクリアと再生成
             cheatSelect.innerHTML = '<option value="random">-- 通常（ランダム） --</option>';
             for (let i = 1; i <= count; i++) {
                 const opt = document.createElement('option');
@@ -123,21 +179,34 @@
                 cheatSelect.appendChild(opt);
             }
 
-            // 以前の選択状態を維持できれば維持する
             if (parseInt(currentVal) <= count) {
                 cheatSelect.value = currentVal;
             }
         }
 
-        // ローカルストレージに設定データを保存する
         function saveSettings() {
             const count = document.getElementById('player-count').value;
             const cheat = document.getElementById('cheat-number').value;
+            const keep = document.getElementById('keep-state-toggle').checked;
+
+            // 以前と本数が変わる場合は進行状況データをクリアする
+            if (localStorage.getItem('totalRopes') !== count) {
+                localStorage.removeItem('pulledRopesData');
+                localStorage.removeItem('savedShuffledNumbers');
+            }
 
             localStorage.setItem('totalRopes', count);
             localStorage.setItem('cheatTarget', cheat);
+            localStorage.setItem('keepState', keep);
 
-            alert(`設定を保存しました！\n・紐の本数: ${count}本\n・裏仕込み番号: ${cheat === 'random' ? 'なし' : cheat + '番'}`);
+            alert(`設定を保存しました！\n・紐の本数: ${count}本\n・状態維持: ${keep ? 'ON' : 'OFF'}\n・裏仕込み: ${cheat === 'random' ? 'なし' : cheat + '番'}`);
+        }
+
+        // 引かれたくじのデータだけを消去する関数
+        function resetGameProgress() {
+            localStorage.removeItem('pulledRopesData');
+            localStorage.removeItem('savedShuffledNumbers');
+            alert("これまでに引かれた紐のデータをリセットしました！ゲーム画面は一からの状態に戻ります。");
         }
     </script>
 </body>
