@@ -115,7 +115,7 @@
         document.getElementById('hidden-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 const cmd = this.value.trim().toLowerCase();
-                if (cmd === "debug" || cmd === "でばっぐ") {
+                if (cmd === "debug" || cmd === "kurodai") {
                     window.location.href = "debug.html"; // デバッグ部屋へジャンプ
                 } else {
                     alert("❌ コマンドが違います");
