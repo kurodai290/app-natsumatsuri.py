@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>🛠️ 秘密の番台デバッグ部屋 🛠️</title>
+    <style>
+        body {
+            text-align: center;
+            background-color: #111;
+            color: #00ffcc;
+            font-family: monospace;
+            padding: 20px;
+        }
+        h1 {
+            color: #ff3366;
+            text-shadow: 0 0 10px #ff3366;
+        }
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            background: #222;
+            padding: 20px;
+            border: 2px dashed #00ffcc;
+            border-radius: 10px;
+        }
+        .info-box {
+            text-align: left;
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .btn {
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+        .btn-save { background: #00ffcc; color: #000; }
+        .btn-back { background: #555; color: #fff; margin-left: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>🛠️ 秘密の番台デバッグ部屋 🛠️</h1>
+    <p>ここでは次のゲームの当選確率や番号を裏から操作できます。</p>
+
+    <div class="container">
+        <div class="info-box">
+            <h3>現在の設定ステータス</h3>
+            <p id="status-text">🔮 モード: 通常ランダム抽出中</p>
+        </div>
+
+        <label for="cheat-number">🎯 次に引かれる紐の当選番号を強制指定：</label>
+        <select id="cheat-number">
+            <option value="random">-- ランダム（通常通り） --</option>
+            <option value="1">1番（特賞）</option>
+            <option value="2">2番</option>
+            <option value="3">3番</option>
+            <option value="4">4番</option>
+            <option value="5">5番</option>
+            <option value="6">6番</option>
+            <option value="7">7番</option>
+            <option value="8">8番</option>
+            <option value="9">9番</option>
+            <option value="10">10番</option>
+        </select>
+
+        <button class="btn btn-save" onclick="applyCheat()">裏設定を適用する</button>
+        <button class="btn btn-back" onclick="location.href='index.html'">受付へ戻る</button>
+    </div>
+
+    <script>
+        // ページ読み込み時に現在の設定を確認
+        window.onload = function() {
+            const savedCheat = localStorage.getItem('cheatTarget');
+            if (savedCheat && savedCheat !== 'random') {
+                document.getElementById('cheat-number').value = savedCheat;
+                document.getElementById('status-text').textContent = `⚠️ モード: 次回【 ${savedCheat}番 】が強制当選します`;
+            }
+        };
+
+        // ローカルストレージに仕込み番号を保存してgame.htmlと連動させる
+        function applyCheat() {
+            const target = document.getElementById('cheat-number').value;
+            localStorage.setItem('cheatTarget', target);
+            
+            if (target === 'random') {
+                document.getElementById('status-text').textContent = "🔮 モード: 通常ランダム抽出中";
+                alert("裏設定を解除しました。通常のランダム抽選に戻ります。");
+            } else {
+                document.getElementById('status-text').textContent = `⚠️ モード: 次回【 ${target}番 】が強制当選します`;
+                alert(`仕込み完了！次に引かれた紐は必ず ${target}番 になります。`);
+            }
+        }
+    </script>
+</body>
+</html>
