@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>お祭り！千本引きゲーム</title>
+    <title>リアル連動！千本引きゲーム</title>
     <style>
         body {
             text-align: center;
@@ -15,19 +15,25 @@
         h1 {
             color: #ffde7d;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 5px;
+        }
+        .sub-title {
+            color: #2ed573;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 0;
         }
         #game-container {
             position: relative;
             width: 800px;
             height: 450px;
-            background-color: #c0392b; /* 赤い幕をイメージ */
+            background-color: #c0392b; /* 赤い幕 */
             border: 10px solid #f1c40f;
             border-radius: 10px;
             margin: 20px auto;
             overflow: hidden;
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
-        /* 紐が隠れている上の幕 */
         #top-curtain {
             position: absolute;
             top: 0;
@@ -38,13 +44,12 @@
             z-index: 10;
             border-bottom: 5px dashed #f1c40f;
         }
-        /* 景品が隠れている下の幕 */
         #bottom-curtain {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 120px;
+            height: 140px;
             background-color: #2c3e50;
             z-index: 5;
             border-top: 5px solid #34495e;
@@ -65,10 +70,9 @@
             flex-direction: column;
             align-items: center;
         }
-        /* 紐（ひも）の見た目 */
         .rope {
             width: 6px;
-            height: 300px;
+            height: 280px;
             background: linear-gradient(90deg, #d7ccc8, #a1887f, #d7ccc8);
             cursor: pointer;
             transition: transform 0.5s ease-in-out;
@@ -77,57 +81,61 @@
             z-index: 2;
         }
         .rope:hover {
-            background: linear-gradient(90deg, #ffeb3b, #f57f17, #ffeb3b); /* ホバーで光る */
+            background: linear-gradient(90deg, #ffeb3b, #f57f17, #ffeb3b);
         }
-        /* 紐の先端の結び目 */
         .knot {
             width: 16px;
             height: 16px;
             background-color: #8d6e63;
             border-radius: 50%;
             position: absolute;
-            top: 290px;
+            top: 270px;
             cursor: pointer;
             z-index: 3;
             transition: transform 0.5s ease-in-out;
         }
-        /* 引っ張られたときのアニメーション用クラス */
-        .pulled-rope {
-            transform: translateY(-120px); /* 上に引っ張り上げる */
+        .pulled-rope, .pulled-knot {
+            transform: translateY(-130px);
         }
-        .pulled-knot {
-            transform: translateY(-120px);
-        }
-        /* 紐にくっついて上がってくる景品 */
-        .prize {
+        /* 番号札の見た目 */
+        .number-tag {
             position: absolute;
-            bottom: -80px; /* 最初は画面の下に隠れている */
-            width: 70px;
-            height: 70px;
+            bottom: -90px;
+            width: 65px;
+            height: 85px;
             background-color: #fff;
             color: #333;
-            border-radius: 10px;
+            border: 4px solid #ff4757;
+            border-radius: 5px;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-weight: bold;
-            font-size: 12px;
-            text-align: center;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             transition: bottom 0.5s ease-in-out;
             z-index: 1;
-            padding: 5px;
             box-sizing: border-box;
         }
-        /* 紐が引かれたら景品がせり上がる */
-        .pulled-prize {
-            bottom: 110px; 
+        .number-tag .title {
+            font-size: 10px;
+            color: #777;
+            font-weight: bold;
+        }
+        .number-tag .num {
+            font-size: 32px;
+            font-weight: bold;
+            color: #d63031;
+            line-height: 1;
+            margin-top: 5px;
+        }
+        .pulled-tag {
+            bottom: 120px; 
         }
         #result-display {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: bold;
-            color: #ff3838;
-            height: 40px;
+            color: #ffde7d;
+            height: 45px;
             margin-top: 10px;
         }
         #reset-btn {
@@ -149,8 +157,8 @@
 </head>
 <body>
 
-    <h1>🏮 豪華賞品を当てろ！千本引きゲーム 🏮</h1>
-    <p>好きな紐（ひも）を1本選んでクリックしてね！</p>
+    <h1>🏮 リアル連動！千本引きくじ 🏮</h1>
+    <p class="sub-title">紐をひいて、出た番号の景品をもらおう！</p>
     
     <div id="game-container">
         <div id="top-curtain"></div>
@@ -159,41 +167,34 @@
     </div>
 
     <div id="result-display"></div>
-    <button id="reset-btn" onclick="initGame()">もう一度引く</button>
+    <button id="reset-btn" onclick="initGame()">次の人がひく</button>
 
     <script>
         const ropeContainer = document.getElementById('rope-container');
         const resultDisplay = document.getElementById('result-display');
         const resetBtn = document.getElementById('reset-btn');
 
-        // 景品のリスト（確率を設定するため多めに用意）
-        const prizePool = [
-            { name: "特賞🌟<br>ゲーム機", msg: "おめでとう！特賞のゲーム機だ！", color: "#ffd700" },
-            { name: "一等一本きり🎯<br>特大花火", msg: "すごい！一等の特大花火セット！", color: "#ff9f43" },
-            { name: "二等🧸<br>ぬいぐるみ", msg: "やったね！可愛いぬいぐるみ！", color: "#54a0ff" },
-            { name: "三等🍫<br>お菓子詰合せ", msg: "三等！お菓子の詰め合わせだよ", color: "#5fg" }, 
-            { name: "残念シュウマイ<br>ハズレポケットティッシュ", msg: "ティッシュでした！次は当たるといいね！", color: "#eeeeee" },
-            { name: "残念シュウマイ<br>ハズレポケットティッシュ", msg: "ティッシュでした！次は当たるといいね！", color: "#eeeeee" },
-            { name: "残念シュウマイ<br>ハズレポケットティッシュ", msg: "ティッシュでした！次は当たるといいね！", color: "#eeeeee" },
-            { name: "残念シュウマイ<br>ハズレポケットティッシュ", msg: "ティッシュでした！次は当たるといいね！", color: "#eeeeee" },
-            { name: "残念シュウマイ<br>ハズレポケットティッシュ", msg: "ティッシュでした！次は当たるといいね！", color: "#eeeeee" },
-            { name: "残念シュウマイ<br>ハズレポケットティッシュ", msg: "ティッシュでした！次は当たるといいね！", color: "#eeeeee" }
-        ];
-
+        // 1から10までの番号を管理
+        const totalRopes = 10;
         let hasPulled = false;
 
-        // ゲームの初期化・紐の生成
         function initGame() {
             ropeContainer.innerHTML = '';
             resultDisplay.textContent = '';
             resetBtn.style.display = 'none';
             hasPulled = false;
 
-            // 景品プールをランダムにシャッフル（どの紐に何があるか分からなくする）
-            const shuffledPrizes = [...prizePool].sort(() => Math.random() - 0.5);
+            // 1〜10の数字が入った配列を作る
+            const numbers = [];
+            for (let i = 1; i <= totalRopes; i++) {
+                numbers.push(i);
+            }
 
-            // 10本の紐を作る
-            for (let i = 0; i < 10; i++) {
+            // 配列をシャッフル（どの紐が何番に繋がっているかランダムにする）
+            const shuffledNumbers = numbers.sort(() => Math.random() - 0.5);
+
+            // 10本の紐を生成
+            for (let i = 0; i < totalRopes; i++) {
                 const wrapper = document.createElement('div');
                 wrapper.classList.add('rope-wrapper');
 
@@ -203,31 +204,32 @@
                 const knot = document.createElement('div');
                 knot.classList.add('knot');
 
-                const prize = document.createElement('div');
-                prize.classList.add('prize');
-                prize.innerHTML = shuffledPrizes[i].name;
-                prize.style.border = `4px solid ${shuffledPrizes[i].color}`;
+                // 番号札（タグ）を作成
+                const tag = document.createElement('div');
+                tag.classList.add('number-tag');
+                
+                const selectedNumber = shuffledNumbers[i];
+                tag.innerHTML = `<span class="title">ばんごう</span><span class="num">${selectedNumber}</span>`;
 
                 wrapper.appendChild(rope);
                 wrapper.appendChild(knot);
-                wrapper.appendChild(prize);
+                wrapper.appendChild(tag);
                 ropeContainer.appendChild(wrapper);
 
-                // クリックしたときのイベント（紐か結び目のどちらを押しても反応）
+                // クリック時のアクション
                 const pullAction = () => {
-                    if (hasPulled) return; // すでに引いていたら反応しない
+                    if (hasPulled) return;
                     hasPulled = true;
 
-                    // 引いた紐にアニメーション用クラスをつける
                     rope.classList.add('pulled-rope');
                     knot.classList.add('pulled-knot');
-                    prize.classList.add('pulled-prize');
+                    tag.classList.add('pulled-tag');
 
-                    // 結果を表示
+                    // 結果発表
                     setTimeout(() => {
-                        resultDisplay.innerHTML = shuffledPrizes[i].msg;
+                        resultDisplay.innerHTML = `🎉 【 ${selectedNumber} 番 】 のお菓子をゲット！`;
                         resetBtn.style.display = 'block';
-                    }, 500); // アニメーションが終わる0.5秒後に表示
+                    }, 500);
                 };
 
                 rope.addEventListener('click', pullAction);
@@ -235,7 +237,7 @@
             }
         }
 
-        // 最初にゲームを起動
+        // 初期起動
         initGame();
     </script>
 </body>
