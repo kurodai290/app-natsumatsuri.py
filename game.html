@@ -26,7 +26,7 @@
         }
         #game-container {
             position: relative;
-            width: 95%; /* 紐の本数が増えても収まるように横幅を柔軟に変更 */
+            width: 95%;
             max-width: 1100px;
             height: 480px;
             background: radial-gradient(circle, #3a0505 0%, #140101 100%);
@@ -60,7 +60,7 @@
         }
         .rope-wrapper {
             position: relative;
-            flex: 1; /* 本数に合わせて1本あたりの幅を自動調整 */
+            flex: 1;
             max-width: 50px;
             height: 100%;
             display: flex;
@@ -91,6 +91,8 @@
             transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .pulled-rope, .pulled-knot { transform: translateY(-140px) !important; }
+        /* すでに引かれた紐は、ホバーエフェクトを無効化し半透明にする */
+        .already-pulled { filter: brightness(0.6); opacity: 0.7; cursor: default !important; pointer-events: none; }
         .number-tag {
             position: absolute;
             bottom: -100px;
@@ -115,7 +117,6 @@
         #result-display { font-size: 32px; font-weight: bold; color: #00ffcc; height: 50px; margin-top: 15px; }
         .btn-group { display: flex; justify-content: center; margin: 20px auto; }
         .control-btn { padding: 14px 35px; font-size: 20px; font-weight: bold; color: white; border: none; border-radius: 50px; cursor: pointer; display: none; }
-        /* 🛠️ ボタンのデザインを「受付にもどる」用に調整 */
         #back-btn { background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%); box-shadow: 0 6px 12px rgba(0,0,0,0.3); }
         #back-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
     </style>
@@ -134,7 +135,6 @@
     <div id="result-display"></div>
     
     <div class="btn-group">
-        <!-- 🛠️ 次の人ボタンを削除し、受付に戻るボタンのみに統合 -->
         <button id="back-btn" class="control-btn" onclick="goToGate()">受付にもどる</button>
     </div>
 
@@ -143,8 +143,9 @@
         const resultDisplay = document.getElementById('result-display');
         const backBtn = document.getElementById('back-btn');
 
-        let totalRopes = 10; // デフォルトは10本
+        let totalRopes = 10;
         let hasPulled = false;
+        let keepState = false;
 
         function initGame() {
             ropeContainer.innerHTML = '';
@@ -152,19 +153,37 @@
             backBtn.style.display = 'none';
             hasPulled = false;
 
-            // デバッグ設定部屋から「設定された人数（紐の本数）」を読み込む
-            const savedTotal = localStorage.getItem('totalRopes');
-            if (savedTotal) {
-                totalRopes = parseInt(savedTotal);
+            // 🛠️ 各種設定の読み込み
+            totalRopes = parseInt(localStorage.getItem('totalRopes')) || 10;
+            keepState = localStorage.getItem('keepState') === 'true';
+
+            // 既に使用されたインデックス（ひもの位置）のリストを取得
+            let pulledIndexes = [];
+            if (keepState) {
+                pulledIndexes = JSON.parse(localStorage.getItem('pulledRopesData')) || [];
+            } else {
+                // 状態維持がOFFなら進行データを削除
+                localStorage.removeItem('pulledRopesData');
+                localStorage.removeItem('savedShuffledNumbers');
             }
 
-            const numbers = [];
-            for (let i = 1; i <= totalRopes; i++) {
-                numbers.push(i);
+            // くじの配列を用意
+            let shuffledNumbers = [];
+            const savedNumbers = localStorage.getItem('savedShuffledNumbers');
+
+            // 状態維持ONかつ過去データがあれば配列を復元、なければ新しく作成
+            if (keepState && savedNumbers) {
+                shuffledNumbers = JSON.parse(savedNumbers);
+            } else {
+                const numbers = [];
+                for (let i = 1; i <= totalRopes; i++) numbers.push(i);
+                shuffledNumbers = numbers.sort(() => Math.random() - 0.5);
+                
+                if (keepState) {
+                    localStorage.setItem('savedShuffledNumbers', JSON.stringify(shuffledNumbers));
+                }
             }
 
-            // 番号のシャッフル
-            const shuffledNumbers = numbers.sort(() => Math.random() - 0.5);
             const cheatTarget = localStorage.getItem('cheatTarget');
 
             for (let i = 0; i < totalRopes; i++) {
@@ -187,24 +206,43 @@
                 wrapper.appendChild(rope);
                 wrapper.appendChild(knot);
 
+                // 👑 すでに引かれている紐だった場合の初期状態の再現
+                if (keepState && pulledIndexes.includes(i)) {
+                    rope.classList.add('pulled-rope', 'already-pulled');
+                    knot.classList.add('pulled-knot', 'already-pulled');
+                    tag.classList.add('pulled-tag');
+                }
+
                 const pullEvent = () => {
-                    if (hasPulled) return;
+                    // すでに今回のターンで引いている、または過去に引かれている場合は何もしない
+                    if (hasPulled || (keepState && pulledIndexes.includes(i))) return;
                     hasPulled = true;
 
-                    // デバッグ仕込みがあった場合の判定
                     if (cheatTarget && cheatTarget !== 'random') {
                         selectedNumber = parseInt(cheatTarget);
                         document.getElementById(`num-${i}`).textContent = selectedNumber;
-                        localStorage.removeItem('cheatTarget'); // 1回使ったらクリア
+                        localStorage.removeItem('cheatTarget');
+                        
+                        // 仕込みがあった場合は保存用のシャッフル配列内データも書き換える
+                        shuffledNumbers[i] = selectedNumber;
+                        if (keepState) {
+                            localStorage.setItem('savedShuffledNumbers', JSON.stringify(shuffledNumbers));
+                        }
                     }
 
                     rope.classList.add('pulled-rope');
                     knot.classList.add('pulled-knot');
                     tag.classList.add('pulled-tag');
 
+                    // 👑 引いたひもの位置を保存
+                    if (keepState) {
+                        pulledIndexes.push(i);
+                        localStorage.setItem('pulledRopesData', JSON.stringify(pulledIndexes));
+                    }
+
                     setTimeout(() => {
                         resultDisplay.textContent = `🎉 おめでとう！ 【${selectedNumber}番】 獲得！`;
-                        backBtn.style.display = 'block'; // 🛠️ 受付にもどるボタンを表示
+                        backBtn.style.display = 'block';
                     }, 600);
                 };
 
