@@ -120,8 +120,9 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
 
+        /* アニメーション用クラス */
         .pulled-rope, .pulled-knot {
-            transform: translateY(-140px); /* 引き上げ幅を少し大きく */
+            transform: translateY(-140px) !important;
         }
 
         /* 番号札：和風の木札・金ピカ仕様に変更 */
@@ -163,7 +164,7 @@
         }
 
         .pulled-tag {
-            bottom: 130px; 
+            bottom: 130px !important; 
         }
 
         /* 結果発表のテキスト表示エリア */
@@ -245,12 +246,17 @@
             backBtn.style.display = 'none';
             hasPulled = false;
 
+            // 1〜10の配列を作成
             const numbers = [];
             for (let i = 1; i <= totalRopes; i++) {
                 numbers.push(i);
             }
 
+            // シャッフル
             const shuffledNumbers = numbers.sort(() => Math.random() - 0.5);
+
+            // 【デバッグ用】裏設定(強制番号)がセットされているかチェック
+            const cheatTarget = localStorage.getItem('cheatTarget');
 
             for (let i = 0; i < totalRopes; i++) {
                 const wrapper = document.createElement('div');
@@ -265,38 +271,51 @@
                 const tag = document.createElement('div');
                 tag.classList.add('number-tag');
                 
-                const selectedNumber = shuffledNumbers[i];
-                tag.innerHTML = `<span class="title">第</span><span class="num">${selectedNumber}</span>`;
+                let selectedNumber = shuffledNumbers[i];
+                tag.innerHTML = `<span class="title">第</span><span class="num" id="num-${i}">${selectedNumber}</span>`;
 
+                // 要素を組み立て
+                wrapper.appendChild(tag);
                 wrapper.appendChild(rope);
                 wrapper.appendChild(knot);
-                wrapper.appendChild(tag);
-                ropeContainer.appendChild(wrapper);
 
-                const pullAction = () => {
+                // ひもを引いた時の処理
+                const pullEvent = () => {
                     if (hasPulled) return;
                     hasPulled = true;
 
+                    // デバッグ仕込みがあった場合、クリックされた紐の番号を上書き
+                    if (cheatTarget && cheatTarget !== 'random') {
+                        selectedNumber = parseInt(cheatTarget);
+                        document.getElementById(`num-${i}`).textContent = selectedNumber;
+                        localStorage.removeItem('cheatTarget'); // 1回使ったらクリア
+                    }
+
+                    // アニメーション適用
                     rope.classList.add('pulled-rope');
                     knot.classList.add('pulled-knot');
                     tag.classList.add('pulled-tag');
 
+                    // 結果表示
                     setTimeout(() => {
-                        resultDisplay.innerHTML = `🌟 【 第 ${selectedNumber} 号 】 景品獲得！ 🌟`;
-                        resetBtn.style.display = 'inline-block';
-                        backBtn.style.display = 'inline-block';
-                    }, 600); // アニメーション速度に合わせて少し遅延を変更
+                        resultDisplay.textContent = `🎉 おめでとう！ 【${selectedNumber}番】 獲得！`;
+                        resetBtn.style.display = 'block';
+                        backBtn.style.display = 'block';
+                    }, 600);
                 };
 
-                rope.addEventListener('click', pullAction);
-                knot.addEventListener('click', pullAction);
+                rope.addEventListener('click', pullEvent);
+                knot.addEventListener('click', pullEvent);
+
+                ropeContainer.appendChild(wrapper);
             }
         }
 
         function goToGate() {
-            window.location.href = "index.html";
+            window.location.href = "index.html"; // 受付のHTMLファイル名に合わせて変更してください
         }
 
+        // 初回起動
         initGame();
     </script>
 </body>
